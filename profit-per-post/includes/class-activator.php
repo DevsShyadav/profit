@@ -86,7 +86,7 @@ class Activator {
             'ppp_affiliate_rev_per_click' => 0.50,
             'ppp_attribution_model'    => 'last_touch',
             'ppp_wc_cookie_days'       => 30,
-            'ppp_onboarding_complete'  => false,
+            'ppp_onboarding_complete'  => true,
             'ppp_enabled_sources'      => array(
                 'google_analytics' => false,
                 'adsense'          => false,

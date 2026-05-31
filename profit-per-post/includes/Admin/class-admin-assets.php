@@ -86,7 +86,7 @@ class AdminAssets {
             'defaultRange'  => get_option( 'ppp_default_date_range', '30' ),
             'datePresets'   => DateHelper::get_presets(),
             'currencies'    => CurrencyFormatter::get_available_currencies(),
-            'isOnboarded'   => (bool) get_option( 'ppp_onboarding_complete', false ),
+            'isOnboarded'   => true,
             'currentPage'   => AdminMenu::get_current_page(),
             'capabilities'  => array(
                 'canManageSettings'   => current_user_can( 'ppp_manage_settings' ) || current_user_can( 'manage_options' ),
