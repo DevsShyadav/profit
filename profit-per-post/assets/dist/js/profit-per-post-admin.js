@@ -28,7 +28,8 @@ const API = {
     posts: { list(p) { return API.get('posts', p); }, detail(id, p) { return API.get('posts/' + id, p); } },
     settings: { get() { return API.get('settings'); }, update(d) { return API.post('settings', d); }, completeOnboarding() { return API.post('settings/onboarding/complete'); } },
     connections: { list() { return API.get('connections'); }, connect(s, d) { return API.post('connections/' + s + '/connect', d); }, disconnect(s) { return API.post('connections/' + s + '/disconnect'); }, test(s) { return API.post('connections/' + s + '/test'); } },
-    sync: { status() { return API.get('sync/status'); }, trigger(d) { return API.post('sync/trigger', d); }, history(p) { return API.get('sync/history', p); } }
+    sync: { status() { return API.get('sync/status'); }, trigger(d) { return API.post('sync/trigger', d); }, history(p) { return API.get('sync/history', p); } },
+    ai: { getSuggestions(postId) { return API.post('ai/suggestions', { post_id: postId }); }, getSettings() { return API.get('ai/settings'); }, saveSettings(d) { return API.post('ai/settings', d); } }
 };
 
 function formatCurrency(amount) {
@@ -41,6 +42,7 @@ function timeAgo(d) { if (!d) return 'Never'; const diff = Math.floor((new Date(
 
 const DATE_PRESETS = [{value:'7d',label:'Last 7 Days'},{value:'14d',label:'Last 14 Days'},{value:'30d',label:'Last 30 Days'},{value:'90d',label:'Last 90 Days'},{value:'6m',label:'Last 6 Months'},{value:'12m',label:'Last 12 Months'}];
 const STATUS_COLORS = { connected: '#16a34a', disconnected: '#6b7280', error: '#dc2626', expired: '#f59e0b' };
+
 
 
 /* ============ SHARED COMPONENTS ============ */
@@ -91,6 +93,7 @@ function Toast({ message, type = 'success', onClose }) {
 }
 
 
+
 /* ============ DASHBOARD PAGE ============ */
 function DashboardPage() {
     const [period, setPeriod] = useState((pppConfig.defaultRange || '30') + 'd');
@@ -127,6 +130,7 @@ function DashboardPage() {
                     ) : createElement('p', { className: 'ppp-muted' }, 'No trend data available')
             )
         ),
+
         createElement('div', { className: 'ppp-grid-2' },
             createElement('div', { className: 'ppp-card' },
                 createElement('h3', { className: 'ppp-card__title' }, 'Top Earning Posts'),
@@ -155,6 +159,7 @@ function DashboardPage() {
         )
     );
 }
+
 
 
 /* ============ POSTS LIST PAGE ============ */
@@ -210,49 +215,353 @@ function PostsListPage({ onViewPost }) {
 }
 
 
+
 /* ============ SETTINGS PAGE ============ */
-function SettingsPage() {
-    const [activeTab, setActiveTab] = useState('connections');
-    const [settings, setSettings] = useState(null);
+const AD_NETWORKS = [
+    {
+        id: 'google_analytics',
+        name: 'Google Analytics',
+        icon: 'chart-bar',
+        description: 'Pull traffic data (pageviews, sessions) per post via GA4.',
+        fields: [
+            { key: 'client_id', label: 'Client ID', type: 'text', placeholder: 'Enter your OAuth Client ID' },
+            { key: 'client_secret', label: 'Client Secret', type: 'password', placeholder: 'Enter your OAuth Client Secret' },
+            { key: 'property_id', label: 'GA4 Property ID', type: 'text', placeholder: 'e.g. 123456789' }
+        ]
+    },
+    {
+        id: 'google_adsense',
+        name: 'Google AdSense',
+        icon: 'money-alt',
+        description: 'Import ad revenue data from your AdSense account.',
+        fields: [
+            { key: 'client_id', label: 'Client ID', type: 'text', placeholder: 'Enter your OAuth Client ID' },
+            { key: 'client_secret', label: 'Client Secret', type: 'password', placeholder: 'Enter your OAuth Client Secret' }
+        ]
+    },
+    {
+        id: 'mediavine',
+        name: 'Mediavine',
+        icon: 'megaphone',
+        description: 'Connect Mediavine to pull per-page ad earnings.',
+        fields: [
+            { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Mediavine API Key' },
+            { key: 'site_id', label: 'Site ID', type: 'text', placeholder: 'Enter your Mediavine Site ID' }
+        ]
+    },
+    {
+        id: 'ezoic',
+        name: 'Ezoic',
+        icon: 'admin-site-alt3',
+        description: 'Import revenue data from your Ezoic account.',
+        fields: [
+            { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Ezoic API Key' },
+            { key: 'site_id', label: 'Site ID', type: 'text', placeholder: 'Enter your Ezoic Site ID' }
+        ]
+    },
+    {
+        id: 'adthrive',
+        name: 'AdThrive/Raptive',
+        icon: 'money-alt',
+        description: 'Pull ad revenue from AdThrive (now Raptive).',
+        fields: [
+            { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your AdThrive/Raptive API Key' },
+            { key: 'publisher_id', label: 'Publisher ID', type: 'text', placeholder: 'Enter your Publisher ID' }
+        ]
+    },
+
+    {
+        id: 'monumetric',
+        name: 'Monumetric',
+        icon: 'chart-line',
+        description: 'Import ad revenue from your Monumetric dashboard.',
+        fields: [
+            { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Monumetric API Key' },
+            { key: 'site_id', label: 'Site ID', type: 'text', placeholder: 'Enter your Monumetric Site ID' }
+        ]
+    },
+    {
+        id: 'propellerads',
+        name: 'PropellerAds',
+        icon: 'admin-site',
+        description: 'Connect PropellerAds to track push and pop revenue.',
+        fields: [
+            { key: 'api_token', label: 'API Token', type: 'password', placeholder: 'Enter your PropellerAds API Token' },
+            { key: 'zone_id', label: 'Zone ID', type: 'text', placeholder: 'Enter your Zone ID' }
+        ]
+    },
+    {
+        id: 'infolinks',
+        name: 'Infolinks',
+        icon: 'admin-links',
+        description: 'Track in-text and display ad revenue from Infolinks.',
+        fields: [
+            { key: 'publisher_id', label: 'Publisher ID', type: 'text', placeholder: 'Enter your Infolinks Publisher ID' },
+            { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Infolinks API Key' }
+        ]
+    },
+    {
+        id: 'sovrn',
+        name: 'Sovrn/VigLink',
+        icon: 'networking',
+        description: 'Import affiliate and commerce revenue from Sovrn.',
+        fields: [
+            { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Sovrn API Key' },
+            { key: 'secret', label: 'Secret', type: 'password', placeholder: 'Enter your Sovrn Secret' }
+        ]
+    },
+    {
+        id: 'taboola',
+        name: 'Taboola',
+        icon: 'grid-view',
+        description: 'Track native advertising revenue from Taboola.',
+        fields: [
+            { key: 'account_id', label: 'Account ID', type: 'text', placeholder: 'Enter your Taboola Account ID' },
+            { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Taboola API Key' }
+        ]
+    },
+
+    {
+        id: 'outbrain',
+        name: 'Outbrain',
+        icon: 'external',
+        description: 'Import native ad revenue from Outbrain campaigns.',
+        fields: [
+            { key: 'account_id', label: 'Account ID', type: 'text', placeholder: 'Enter your Outbrain Account ID' },
+            { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Outbrain API Key' }
+        ]
+    },
+    {
+        id: 'medianet',
+        name: 'Media.net',
+        icon: 'admin-site-alt',
+        description: 'Track contextual ad revenue from Media.net.',
+        fields: [
+            { key: 'customer_id', label: 'Customer ID', type: 'text', placeholder: 'Enter your Media.net Customer ID' },
+            { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Media.net API Key' }
+        ]
+    },
+    {
+        id: 'woocommerce',
+        name: 'WooCommerce',
+        icon: 'cart',
+        description: 'Attribute product sales to the posts that drove them.',
+        fields: [
+            { key: 'enabled', label: 'Enable WooCommerce Tracking', type: 'toggle' },
+            { key: 'cookie_days', label: 'Attribution Cookie (days)', type: 'number', placeholder: '30' }
+        ]
+    },
+    {
+        id: 'affiliate_links',
+        name: 'Affiliate Links',
+        icon: 'admin-links',
+        description: 'Track revenue from affiliate link clicks on your posts.',
+        fields: [
+            { key: 'revenue_per_click', label: 'Revenue Per Click ($)', type: 'number', placeholder: '0.05' },
+            { key: 'patterns', label: 'Affiliate URL Patterns (one per line)', type: 'textarea', placeholder: 'amazon.com/\nshareasale.com/\npartnerstack.com/' }
+        ]
+    }
+];
+
+
+function ConnectionCard({ network, connectionStatus, onConnect, onDisconnect }) {
+    const [expanded, setExpanded] = useState(false);
+    const [fields, setFields] = useState({});
+    const [saving, setSaving] = useState(false);
+    const [testing, setTesting] = useState(false);
+
+    const status = connectionStatus || 'disconnected';
+    const isConnected = status === 'connected';
+
+    const handleFieldChange = (key, value) => {
+        setFields(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleConnect = () => {
+        setSaving(true);
+        onConnect(network.id, fields)
+            .then(() => { setExpanded(false); })
+            .catch(() => {})
+            .finally(() => setSaving(false));
+    };
+
+    const handleDisconnect = () => {
+        onDisconnect(network.id);
+    };
+
+    const handleTest = () => {
+        setTesting(true);
+        API.connections.test(network.id)
+            .finally(() => setTesting(false));
+    };
+
+    return createElement('div', { className: 'ppp-connection-card' },
+        createElement('div', { className: 'ppp-connection-card__header' },
+            createElement('div', { className: 'ppp-connection-card__info' },
+                createElement('span', { className: 'dashicons dashicons-' + network.icon, style: { marginRight: '12px', fontSize: '24px', color: '#6366f1' } }),
+                createElement('div', null,
+                    createElement('h4', { className: 'ppp-connection-card__name' }, network.name),
+                    createElement('p', { className: 'ppp-connection-card__desc ppp-muted' }, network.description)
+                )
+            ),
+            createElement('div', { className: 'ppp-connection-card__status-area' },
+                createElement('span', { className: 'ppp-connection-status', style: { color: STATUS_COLORS[status] || '#6b7280', fontWeight: '600', marginRight: '12px' } },
+                    isConnected ? '\u2713 Connected' : 'Not Connected'
+                ),
+                isConnected
+                    ? createElement('div', { style: { display: 'flex', gap: '8px' } },
+                        createElement('button', { className: 'ppp-btn ppp-btn--sm ppp-btn--secondary', onClick: handleTest, disabled: testing }, testing ? 'Testing...' : 'Test'),
+                        createElement('button', { className: 'ppp-btn ppp-btn--sm ppp-btn--danger', onClick: handleDisconnect }, 'Disconnect')
+                    )
+                    : createElement('button', { className: 'ppp-btn ppp-btn--sm ppp-btn--primary', onClick: () => setExpanded(!expanded) }, expanded ? 'Cancel' : 'Configure')
+            )
+        ),
+
+        expanded && !isConnected && createElement('div', { className: 'ppp-connection-card__fields', style: { padding: '20px', borderTop: '1px solid #e5e7eb', background: '#f9fafb' } },
+            network.fields.map(field => {
+                if (field.type === 'toggle') {
+                    return createElement('div', { key: field.key, className: 'ppp-form-group' },
+                        createElement('label', { className: 'ppp-checkbox-label' },
+                            createElement('input', { type: 'checkbox', checked: !!fields[field.key], onChange: e => handleFieldChange(field.key, e.target.checked) }),
+                            ' ' + field.label
+                        )
+                    );
+                }
+                if (field.type === 'textarea') {
+                    return createElement('div', { key: field.key, className: 'ppp-form-group' },
+                        createElement('label', null, field.label),
+                        createElement('textarea', {
+                            className: 'ppp-input',
+                            rows: 4,
+                            placeholder: field.placeholder || '',
+                            value: fields[field.key] || '',
+                            onChange: e => handleFieldChange(field.key, e.target.value),
+                            style: { width: '100%', resize: 'vertical' }
+                        })
+                    );
+                }
+                return createElement('div', { key: field.key, className: 'ppp-form-group' },
+                    createElement('label', null, field.label),
+                    createElement('input', {
+                        type: field.type || 'text',
+                        className: 'ppp-input',
+                        placeholder: field.placeholder || '',
+                        value: fields[field.key] || '',
+                        onChange: e => handleFieldChange(field.key, e.target.value),
+                        style: { width: '100%' }
+                    })
+                );
+            }),
+            createElement('div', { style: { marginTop: '16px' } },
+                createElement('button', { className: 'ppp-btn ppp-btn--primary', onClick: handleConnect, disabled: saving }, saving ? 'Connecting...' : 'Connect')
+            )
+        )
+    );
+}
+
+
+function ConnectionsTabContent({ showToast }) {
     const [connections, setConnections] = useState({});
     const [loading, setLoading] = useState(true);
-    const [toast, setToast] = useState(null);
 
     useEffect(() => {
-        Promise.all([API.settings.get(), API.connections.list()])
-            .then(([s, c]) => { setSettings(s.data); setConnections(c.data); })
+        API.connections.list()
+            .then(r => setConnections(r.data || {}))
+            .catch(() => {})
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return createElement(LoadingState);
+    const handleConnect = (networkId, credentials) => {
+        return API.connections.connect(networkId, credentials)
+            .then(() => {
+                setConnections(prev => ({ ...prev, [networkId]: { ...prev[networkId], status: 'connected' } }));
+                showToast(networkId + ' connected successfully!');
+            })
+            .catch(e => {
+                showToast(e.message || 'Connection failed', 'error');
+                throw e;
+            });
+    };
 
-    const showToast = (msg, type='success') => setToast({ message: msg, type });
-    const tabs = [{id:'connections',label:'Connections'},{id:'sync',label:'Sync'},{id:'display',label:'Display'},{id:'advanced',label:'Advanced'}];
+    const handleDisconnect = (networkId) => {
+        API.connections.disconnect(networkId)
+            .then(() => {
+                setConnections(prev => ({ ...prev, [networkId]: { ...prev[networkId], status: 'disconnected' } }));
+                showToast('Disconnected ' + networkId);
+            })
+            .catch(e => showToast(e.message || 'Failed to disconnect', 'error'));
+    };
 
-    return createElement('div', { className: 'ppp-settings' },
-        createElement('div', { className: 'ppp-page-header' }, createElement('h1', { className: 'ppp-page-title' }, 'Settings')),
-        createElement('div', { className: 'ppp-tabs' }, tabs.map(t => createElement('button', { key: t.id, className: 'ppp-tab ' + (activeTab===t.id?'ppp-tab--active':''), onClick: () => setActiveTab(t.id) }, t.label))),
-        createElement('div', { className: 'ppp-tab-content' },
-            activeTab === 'connections' && createElement('div', { className: 'ppp-connections-list' },
-                Object.entries(connections).map(([id, info]) => createElement('div', { key: id, className: 'ppp-connection-card' },
-                    createElement('div', { className: 'ppp-connection-card__header' },
-                        createElement('span', { className: 'dashicons dashicons-' + (info.icon||'admin-generic') }),
-                        createElement('div', null, createElement('h4', null, info.source_name), createElement('span', { className: 'ppp-connection-status', style: { color: STATUS_COLORS[info.status]||'#6b7280' } }, info.status === 'connected' ? 'Connected' : info.status === 'expired' ? 'Expired' : 'Not Connected'))
-                    ),
-                    createElement('div', { className: 'ppp-connection-card__actions' },
-                        info.status === 'connected'
-                            ? createElement('button', { className: 'ppp-btn ppp-btn--sm ppp-btn--danger', onClick: () => API.connections.disconnect(id).then(() => { connections[id].status='disconnected'; setConnections({...connections}); showToast('Disconnected'); }) }, 'Disconnect')
-                            : createElement('button', { className: 'ppp-btn ppp-btn--sm ppp-btn--primary', onClick: () => showToast('Configure API credentials to connect', 'info') }, 'Connect')
-                    )
-                ))
-            ),
-            activeTab === 'sync' && createElement(SyncTabContent, { showToast }),
-            activeTab === 'display' && createElement(DisplayTabContent, { settings, showToast }),
-            activeTab === 'advanced' && createElement(AdvancedTabContent, { settings, showToast })
+    if (loading) return createElement(LoadingState, { message: 'Loading connections...' });
+
+    return createElement('div', { className: 'ppp-connections-list' },
+        createElement('div', { style: { marginBottom: '20px' } },
+            createElement('h3', { style: { margin: '0 0 4px' } }, 'Ad Network Connections'),
+            createElement('p', { className: 'ppp-muted' }, 'Connect your ad networks and revenue sources to track per-post earnings.')
         ),
-        toast && createElement(Toast, { ...toast, onClose: () => setToast(null) })
+        AD_NETWORKS.map(network => createElement(ConnectionCard, {
+            key: network.id,
+            network: network,
+            connectionStatus: connections[network.id] ? connections[network.id].status : 'disconnected',
+            onConnect: handleConnect,
+            onDisconnect: handleDisconnect
+        }))
     );
 }
+
+
+function AIOptimizerTabContent({ showToast }) {
+    const [provider, setProvider] = useState('openai');
+    const [apiKey, setApiKey] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        API.ai.getSettings()
+            .then(r => {
+                if (r.data) {
+                    setProvider(r.data.provider || 'openai');
+                    setApiKey(r.data.api_key || '');
+                }
+            })
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
+
+    const handleSave = () => {
+        setSaving(true);
+        API.ai.saveSettings({ provider, api_key: apiKey })
+            .then(() => showToast('AI settings saved!'))
+            .catch(e => showToast(e.message || 'Failed to save', 'error'))
+            .finally(() => setSaving(false));
+    };
+
+    if (loading) return createElement(LoadingState, { message: 'Loading AI settings...' });
+
+    return createElement('div', { className: 'ppp-card' },
+        createElement('h3', { style: { marginTop: 0 } }, 'AI Optimizer Configuration'),
+        createElement('p', { className: 'ppp-muted', style: { marginBottom: '24px' } }, 'AI will analyze your low-revenue posts and suggest exactly how to improve them to increase earnings.'),
+        createElement('div', { className: 'ppp-form-group' },
+            createElement('label', null, 'AI Provider'),
+            createElement('select', { className: 'ppp-select', value: provider, onChange: e => setProvider(e.target.value), style: { width: '100%' } },
+                createElement('option', { value: 'openai' }, 'OpenAI'),
+                createElement('option', { value: 'gemini' }, 'Google Gemini'),
+                createElement('option', { value: 'groq' }, 'Groq (Free)')
+            )
+        ),
+        createElement('div', { className: 'ppp-form-group' },
+            createElement('label', null, 'API Key'),
+            createElement('input', { type: 'password', className: 'ppp-input', placeholder: 'Enter your ' + (provider === 'openai' ? 'OpenAI' : provider === 'gemini' ? 'Google Gemini' : 'Groq') + ' API Key', value: apiKey, onChange: e => setApiKey(e.target.value), style: { width: '100%' } }),
+            createElement('p', { className: 'ppp-muted', style: { marginTop: '4px', fontSize: '12px' } },
+                provider === 'openai' ? 'Get your API key at platform.openai.com' :
+                provider === 'gemini' ? 'Get your API key at aistudio.google.com' :
+                'Get your free API key at console.groq.com'
+            )
+        ),
+        createElement('button', { className: 'ppp-btn ppp-btn--primary', onClick: handleSave, disabled: saving }, saving ? 'Saving...' : 'Save AI Settings')
+    );
+}
+
 
 function SyncTabContent({ showToast }) {
     const [syncing, setSyncing] = useState(false);
@@ -310,6 +619,135 @@ function AdvancedTabContent({ settings, showToast }) {
 }
 
 
+function SettingsPage() {
+    const [activeTab, setActiveTab] = useState('connections');
+    const [settings, setSettings] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [toast, setToast] = useState(null);
+
+    useEffect(() => {
+        API.settings.get()
+            .then(s => setSettings(s.data))
+            .finally(() => setLoading(false));
+    }, []);
+
+    if (loading) return createElement(LoadingState);
+
+    const showToast = (msg, type='success') => setToast({ message: msg, type });
+    const tabs = [
+        { id: 'connections', label: 'Connections' },
+        { id: 'ai_optimizer', label: 'AI Optimizer' },
+        { id: 'sync', label: 'Sync' },
+        { id: 'display', label: 'Display' },
+        { id: 'advanced', label: 'Advanced' }
+    ];
+
+    return createElement('div', { className: 'ppp-settings' },
+        createElement('div', { className: 'ppp-page-header' }, createElement('h1', { className: 'ppp-page-title' }, 'Settings')),
+        createElement('div', { className: 'ppp-tabs' }, tabs.map(t => createElement('button', { key: t.id, className: 'ppp-tab ' + (activeTab === t.id ? 'ppp-tab--active' : ''), onClick: () => setActiveTab(t.id) }, t.label))),
+        createElement('div', { className: 'ppp-tab-content' },
+            activeTab === 'connections' && createElement(ConnectionsTabContent, { showToast }),
+            activeTab === 'ai_optimizer' && createElement(AIOptimizerTabContent, { showToast }),
+            activeTab === 'sync' && createElement(SyncTabContent, { showToast }),
+            activeTab === 'display' && createElement(DisplayTabContent, { settings, showToast }),
+            activeTab === 'advanced' && createElement(AdvancedTabContent, { settings, showToast })
+        ),
+        toast && createElement(Toast, { ...toast, onClose: () => setToast(null) })
+    );
+}
+
+
+
+/* ============ AI OPTIMIZER PAGE ============ */
+function AIOptimizerPage() {
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [suggestions, setSuggestions] = useState({});
+    const [loadingSuggestions, setLoadingSuggestions] = useState({});
+    const [toast, setToast] = useState(null);
+
+    useEffect(() => {
+        API.posts.list({ period: '30d', per_page: 50, order_by: 'revenue', order: 'ASC' })
+            .then(r => {
+                const lowRevPosts = (r.data.posts || []).filter(p => parseFloat(p.revenue) <= 0.01);
+                setPosts(lowRevPosts);
+            })
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, []);
+
+    const handleGetSuggestions = (postId) => {
+        setLoadingSuggestions(prev => ({ ...prev, [postId]: true }));
+        API.ai.getSuggestions(postId)
+            .then(r => {
+                setSuggestions(prev => ({ ...prev, [postId]: r.data }));
+            })
+            .catch(e => {
+                setToast({ message: e.message || 'Failed to get AI suggestions. Make sure your AI API key is configured in Settings.', type: 'error' });
+            })
+            .finally(() => {
+                setLoadingSuggestions(prev => ({ ...prev, [postId]: false }));
+            });
+    };
+
+    if (loading) return createElement(LoadingState, { message: 'Finding low-revenue posts...' });
+
+    return createElement('div', { className: 'ppp-ai-optimizer' },
+        createElement('div', { className: 'ppp-page-header' },
+            createElement('div', null,
+                createElement('h1', { className: 'ppp-page-title' }, 'AI Optimizer'),
+                createElement('p', { className: 'ppp-page-subtitle' }, 'Get AI-powered suggestions to improve your low-earning posts')
+            )
+        ),
+        createElement('div', { className: 'ppp-card', style: { marginBottom: '24px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#fff', border: 'none' } },
+            createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '16px' } },
+                createElement('span', { className: 'dashicons dashicons-lightbulb', style: { fontSize: '32px' } }),
+                createElement('div', null,
+                    createElement('h3', { style: { margin: '0 0 4px', color: '#fff' } }, 'How it works'),
+                    createElement('p', { style: { margin: 0, opacity: 0.9 } }, 'AI analyzes your posts making $0 revenue and provides specific, actionable suggestions to improve SEO, content structure, monetization placement, and reader engagement.')
+                )
+            )
+        ),
+
+        posts.length === 0
+            ? createElement(EmptyState, { title: 'No Low-Revenue Posts Found', description: 'All your posts are generating revenue. Great job! Check back later or sync fresh data.' })
+            : createElement('div', { className: 'ppp-ai-posts-list' },
+                createElement('h3', { style: { marginBottom: '16px' } }, posts.length + ' Posts with $0 Revenue'),
+                posts.map(post => createElement('div', { key: post.post_id, className: 'ppp-card', style: { marginBottom: '16px' } },
+                    createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' } },
+                        createElement('div', { style: { flex: 1 } },
+                            createElement('h4', { style: { margin: '0 0 4px' } }, post.title),
+                            createElement('div', { style: { display: 'flex', gap: '16px', fontSize: '13px' } },
+                                createElement('span', { className: 'ppp-muted' }, formatNumber(post.pageviews) + ' views'),
+                                createElement('span', { className: 'ppp-muted' }, 'Revenue: ' + formatCurrency(post.revenue)),
+                                createElement('span', { className: 'ppp-muted' }, 'RPM: ' + formatCurrency(post.rpm))
+                            )
+                        ),
+                        !suggestions[post.post_id] && createElement('button', {
+                            className: 'ppp-btn ppp-btn--primary ppp-btn--sm',
+                            onClick: () => handleGetSuggestions(post.post_id),
+                            disabled: loadingSuggestions[post.post_id]
+                        }, loadingSuggestions[post.post_id] ? 'Analyzing...' : 'Get AI Suggestions')
+                    ),
+                    suggestions[post.post_id] && createElement('div', { className: 'ppp-ai-suggestions', style: { marginTop: '16px', padding: '16px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' } },
+                        createElement('h5', { style: { margin: '0 0 12px', color: '#166534', display: 'flex', alignItems: 'center', gap: '8px' } },
+                            createElement('span', { className: 'dashicons dashicons-lightbulb' }),
+                            'AI Suggestions'
+                        ),
+                        createElement('div', { style: { whiteSpace: 'pre-wrap', fontSize: '14px', lineHeight: '1.6', color: '#1f2937' } },
+                            typeof suggestions[post.post_id] === 'string'
+                                ? suggestions[post.post_id]
+                                : suggestions[post.post_id].suggestions || suggestions[post.post_id].text || JSON.stringify(suggestions[post.post_id], null, 2)
+                        )
+                    )
+                ))
+            ),
+        toast && createElement(Toast, { ...toast, onClose: () => setToast(null) })
+    );
+}
+
+
+
 /* ============ ONBOARDING WIZARD ============ */
 function OnboardingWizard({ onComplete }) {
     const [step, setStep] = useState(0);
@@ -344,6 +782,7 @@ function OnboardingWizard({ onComplete }) {
     );
 }
 
+
 /* ============ MAIN APP ============ */
 function App() {
     const [route, setRoute] = useState(getInitialRoute());
@@ -354,6 +793,7 @@ function App() {
     const renderPage = () => {
         switch (route) {
             case 'posts': return createElement(PostsListPage, {});
+            case 'ai-optimizer': return createElement(AIOptimizerPage);
             case 'settings': return createElement(SettingsPage);
             default: return createElement(DashboardPage);
         }
@@ -365,6 +805,7 @@ function App() {
             createElement('ul', { className: 'ppp-sidebar__nav' },
                 createElement('li', null, createElement('button', { className: 'ppp-sidebar__link ' + (route==='dashboard'?'ppp-sidebar__link--active':''), onClick: () => setRoute('dashboard') }, createElement('span', { className: 'dashicons dashicons-dashboard' }), ' Dashboard')),
                 createElement('li', null, createElement('button', { className: 'ppp-sidebar__link ' + (route==='posts'?'ppp-sidebar__link--active':''), onClick: () => setRoute('posts') }, createElement('span', { className: 'dashicons dashicons-admin-post' }), ' All Posts')),
+                createElement('li', null, createElement('button', { className: 'ppp-sidebar__link ' + (route==='ai-optimizer'?'ppp-sidebar__link--active':''), onClick: () => setRoute('ai-optimizer') }, createElement('span', { className: 'dashicons dashicons-lightbulb' }), ' AI Optimizer')),
                 pppConfig.capabilities.canManageSettings && createElement('li', null, createElement('button', { className: 'ppp-sidebar__link ' + (route==='settings'?'ppp-sidebar__link--active':''), onClick: () => setRoute('settings') }, createElement('span', { className: 'dashicons dashicons-admin-generic' }), ' Settings'))
             )
         ),
@@ -375,6 +816,7 @@ function App() {
 function getInitialRoute() {
     const p = pppConfig.currentPage || '';
     if (p.includes('posts')) return 'posts';
+    if (p.includes('ai-optimizer') || p.includes('ai_optimizer')) return 'ai-optimizer';
     if (p.includes('settings')) return 'settings';
     return 'dashboard';
 }

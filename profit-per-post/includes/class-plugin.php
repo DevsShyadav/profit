@@ -18,6 +18,7 @@ use ProfitPerPost\API\SettingsEndpoint;
 use ProfitPerPost\API\ConnectionsEndpoint;
 use ProfitPerPost\API\SyncEndpoint;
 use ProfitPerPost\API\ExportEndpoint;
+use ProfitPerPost\API\AIEndpoint;
 use ProfitPerPost\Integrations\IntegrationManager;
 use ProfitPerPost\Sync\SyncScheduler;
 use ProfitPerPost\Sync\SyncManager;
@@ -211,6 +212,9 @@ class Plugin {
 
             $export = new ExportEndpoint( $this->revenue_calculator );
             $export->register_routes();
+
+            $ai = new AIEndpoint();
+            $ai->register_routes();
         });
     }
 
