@@ -41,11 +41,15 @@ class AdminMenu {
      * @return void
      */
     public function register_menus() {
+        // Use 'manage_options' as the capability for menu access.
+        // This ensures admins can always access the pages.
+        // Fine-grained permission checks happen inside the REST API endpoints.
+
         // Main menu page.
         add_menu_page(
             __( 'Profit Per Post', 'profit-per-post' ),
             __( 'Profit Per Post', 'profit-per-post' ),
-            'ppp_view_revenue',
+            'manage_options',
             self::MENU_SLUG,
             array( $this, 'render_app' ),
             'dashicons-chart-area',
@@ -57,7 +61,7 @@ class AdminMenu {
             self::MENU_SLUG,
             __( 'Dashboard', 'profit-per-post' ),
             __( 'Dashboard', 'profit-per-post' ),
-            'ppp_view_revenue',
+            'manage_options',
             self::MENU_SLUG,
             array( $this, 'render_app' )
         );
@@ -67,7 +71,7 @@ class AdminMenu {
             self::MENU_SLUG,
             __( 'All Posts', 'profit-per-post' ),
             __( 'All Posts', 'profit-per-post' ),
-            'ppp_view_revenue',
+            'manage_options',
             self::MENU_SLUG . '-posts',
             array( $this, 'render_app' )
         );
@@ -77,7 +81,7 @@ class AdminMenu {
             self::MENU_SLUG,
             __( 'Settings', 'profit-per-post' ),
             __( 'Settings', 'profit-per-post' ),
-            'ppp_manage_settings',
+            'manage_options',
             self::MENU_SLUG . '-settings',
             array( $this, 'render_app' )
         );

@@ -116,6 +116,9 @@ class Plugin {
         // Load text domain.
         add_action( 'init', array( $this, 'load_textdomain' ) );
 
+        // Ensure capabilities are registered (safety net for upgrades).
+        add_action( 'admin_init', array( $this, 'ensure_capabilities' ) );
+
         // Initialize components.
         $this->init_admin();
         $this->init_rest_api();
@@ -124,6 +127,20 @@ class Plugin {
 
         // Custom hooks for extensibility.
         do_action( 'ppp_plugin_loaded', $this );
+    }
+
+    /**
+     * Ensure custom capabilities exist (runs on admin_init as safety net).
+     *
+     * @return void
+     */
+    public function ensure_capabilities() {
+        // Only run once per version update.
+        $caps_version = get_option( 'ppp_caps_version', '0' );
+        if ( version_compare( $caps_version, PPP_VERSION, '<' ) ) {
+            CapabilityManager::register_capabilities();
+            update_option( 'ppp_caps_version', PPP_VERSION );
+        }
     }
 
     /**

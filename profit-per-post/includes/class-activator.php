@@ -9,6 +9,7 @@ namespace ProfitPerPost;
 
 use ProfitPerPost\Database\Migrator;
 use ProfitPerPost\Security\Encryption;
+use ProfitPerPost\Security\CapabilityManager;
 
 // Prevent direct access.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -28,6 +29,9 @@ class Activator {
      * @return void
      */
     public static function activate() {
+        // Register custom capabilities FIRST (before anything else).
+        CapabilityManager::register_capabilities();
+
         // Create database tables.
         self::create_tables();
 
