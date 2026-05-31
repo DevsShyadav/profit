@@ -223,6 +223,7 @@ const AD_NETWORKS = [
         name: 'Google Analytics',
         icon: 'chart-bar',
         description: 'Pull traffic data (pageviews, sessions) per post via GA4.',
+        guide: 'How to get: Go to console.cloud.google.com → Create Project → Enable Analytics Data API → Credentials → Create OAuth 2.0 Client ID. Copy Client ID & Secret. GA4 Property ID is found in Analytics Admin → Property → Property Details.',
         fields: [
             { key: 'client_id', label: 'Client ID', type: 'text', placeholder: 'Enter your OAuth Client ID' },
             { key: 'client_secret', label: 'Client Secret', type: 'password', placeholder: 'Enter your OAuth Client Secret' },
@@ -234,6 +235,7 @@ const AD_NETWORKS = [
         name: 'Google AdSense',
         icon: 'money-alt',
         description: 'Import ad revenue data from your AdSense account.',
+        guide: 'How to get: Go to console.cloud.google.com → Same project as GA → Enable AdSense Management API → Use the same OAuth Client ID & Secret you created for Google Analytics.',
         fields: [
             { key: 'client_id', label: 'Client ID', type: 'text', placeholder: 'Enter your OAuth Client ID' },
             { key: 'client_secret', label: 'Client Secret', type: 'password', placeholder: 'Enter your OAuth Client Secret' }
@@ -244,6 +246,7 @@ const AD_NETWORKS = [
         name: 'Mediavine',
         icon: 'megaphone',
         description: 'Connect Mediavine to pull per-page ad earnings.',
+        guide: 'How to get: Log in to your Mediavine Dashboard → Go to Settings → API Access → Generate API Key. Your Site ID is shown on the dashboard top-right corner.',
         fields: [
             { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Mediavine API Key' },
             { key: 'site_id', label: 'Site ID', type: 'text', placeholder: 'Enter your Mediavine Site ID' }
@@ -254,6 +257,7 @@ const AD_NETWORKS = [
         name: 'Ezoic',
         icon: 'admin-site-alt3',
         description: 'Import revenue data from your Ezoic account.',
+        guide: 'How to get: Log in to Ezoic → Go to Settings → API → Create New API Key. Your Site ID is visible in the URL when you select your site in the dashboard.',
         fields: [
             { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Ezoic API Key' },
             { key: 'site_id', label: 'Site ID', type: 'text', placeholder: 'Enter your Ezoic Site ID' }
@@ -264,17 +268,18 @@ const AD_NETWORKS = [
         name: 'AdThrive/Raptive',
         icon: 'money-alt',
         description: 'Pull ad revenue from AdThrive (now Raptive).',
+        guide: 'How to get: Contact your Raptive (AdThrive) account manager and request API access. They will provide you an API Key and your Publisher ID.',
         fields: [
             { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your AdThrive/Raptive API Key' },
             { key: 'publisher_id', label: 'Publisher ID', type: 'text', placeholder: 'Enter your Publisher ID' }
         ]
     },
-
     {
         id: 'monumetric',
         name: 'Monumetric',
         icon: 'chart-line',
         description: 'Import ad revenue from your Monumetric dashboard.',
+        guide: 'How to get: Log in to Monumetric dashboard → Account Settings → Developer/API section → Generate API Key. Site ID is shown in your account overview.',
         fields: [
             { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Monumetric API Key' },
             { key: 'site_id', label: 'Site ID', type: 'text', placeholder: 'Enter your Monumetric Site ID' }
@@ -285,6 +290,7 @@ const AD_NETWORKS = [
         name: 'PropellerAds',
         icon: 'admin-site',
         description: 'Connect PropellerAds to track push and pop revenue.',
+        guide: 'How to get: Log in to PropellerAds → Account → API Settings → Generate Token. Zone ID is found in Sites → select your site → Zone ID column.',
         fields: [
             { key: 'api_token', label: 'API Token', type: 'password', placeholder: 'Enter your PropellerAds API Token' },
             { key: 'zone_id', label: 'Zone ID', type: 'text', placeholder: 'Enter your Zone ID' }
@@ -295,6 +301,7 @@ const AD_NETWORKS = [
         name: 'Infolinks',
         icon: 'admin-links',
         description: 'Track in-text and display ad revenue from Infolinks.',
+        guide: 'How to get: Log in to Infolinks → Account Settings → Your Publisher ID is shown at the top. For API Key, go to Integrate → API section.',
         fields: [
             { key: 'publisher_id', label: 'Publisher ID', type: 'text', placeholder: 'Enter your Infolinks Publisher ID' },
             { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Infolinks API Key' }
@@ -305,6 +312,7 @@ const AD_NETWORKS = [
         name: 'Sovrn/VigLink',
         icon: 'networking',
         description: 'Import affiliate and commerce revenue from Sovrn.',
+        guide: 'How to get: Log in to Sovrn Commerce → Account → API Keys → Create New Key. The Secret is shown once — copy it immediately.',
         fields: [
             { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Sovrn API Key' },
             { key: 'secret', label: 'Secret', type: 'password', placeholder: 'Enter your Sovrn Secret' }
@@ -315,17 +323,18 @@ const AD_NETWORKS = [
         name: 'Taboola',
         icon: 'grid-view',
         description: 'Track native advertising revenue from Taboola.',
+        guide: 'How to get: Log in to Taboola Backstage → Account → API → Request API access or use existing credentials. Account ID is in your dashboard URL.',
         fields: [
             { key: 'account_id', label: 'Account ID', type: 'text', placeholder: 'Enter your Taboola Account ID' },
             { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Taboola API Key' }
         ]
     },
-
     {
         id: 'outbrain',
         name: 'Outbrain',
         icon: 'external',
         description: 'Import native ad revenue from Outbrain campaigns.',
+        guide: 'How to get: Log in to Outbrain Amplify → Settings → API Access → Generate credentials. Your Account ID is visible in the top navigation.',
         fields: [
             { key: 'account_id', label: 'Account ID', type: 'text', placeholder: 'Enter your Outbrain Account ID' },
             { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Outbrain API Key' }
@@ -336,6 +345,7 @@ const AD_NETWORKS = [
         name: 'Media.net',
         icon: 'admin-site-alt',
         description: 'Track contextual ad revenue from Media.net.',
+        guide: 'How to get: Log in to Media.net → Reporting → API Access (or contact support). Customer ID is visible in your dashboard header.',
         fields: [
             { key: 'customer_id', label: 'Customer ID', type: 'text', placeholder: 'Enter your Media.net Customer ID' },
             { key: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter your Media.net API Key' }
@@ -346,6 +356,7 @@ const AD_NETWORKS = [
         name: 'WooCommerce',
         icon: 'cart',
         description: 'Attribute product sales to the posts that drove them.',
+        guide: 'No API key needed! Just enable tracking below. The plugin will automatically track which blog post a visitor came from before purchasing.',
         fields: [
             { key: 'enabled', label: 'Enable WooCommerce Tracking', type: 'toggle' },
             { key: 'cookie_days', label: 'Attribution Cookie (days)', type: 'number', placeholder: '30' }
@@ -356,6 +367,7 @@ const AD_NETWORKS = [
         name: 'Affiliate Links',
         icon: 'admin-links',
         description: 'Track revenue from affiliate link clicks on your posts.',
+        guide: 'No API key needed! Add your affiliate network domains below. The plugin will automatically track outbound clicks to these URLs from your posts.',
         fields: [
             { key: 'revenue_per_click', label: 'Revenue Per Click ($)', type: 'number', placeholder: '0.05' },
             { key: 'patterns', label: 'Affiliate URL Patterns (one per line)', type: 'textarea', placeholder: 'amazon.com/\nshareasale.com/\npartnerstack.com/' }
@@ -418,6 +430,10 @@ function ConnectionCard({ network, connectionStatus, onConnect, onDisconnect }) 
         ),
 
         expanded && !isConnected && createElement('div', { className: 'ppp-connection-card__fields', style: { padding: '20px', borderTop: '1px solid #e5e7eb', background: '#f9fafb' } },
+            network.guide && createElement('div', { style: { marginBottom: '16px', padding: '12px 14px', background: '#ecfdf5', borderRadius: '8px', border: '1px solid #a7f3d0', fontSize: '13px', color: '#065f46', lineHeight: '1.5' } },
+                createElement('strong', { style: { display: 'block', marginBottom: '4px' } }, '\uD83D\uDCD6 Setup Guide:'),
+                network.guide
+            ),
             network.fields.map(field => {
                 if (field.type === 'toggle') {
                     return createElement('div', { key: field.key, className: 'ppp-form-group' },
@@ -541,6 +557,14 @@ function AIOptimizerTabContent({ showToast }) {
     return createElement('div', { className: 'ppp-card' },
         createElement('h3', { style: { marginTop: 0 } }, 'AI Optimizer Configuration'),
         createElement('p', { className: 'ppp-muted', style: { marginBottom: '24px' } }, 'AI will analyze your low-revenue posts and suggest exactly how to improve them to increase earnings.'),
+        createElement('div', { style: { marginBottom: '24px', padding: '16px', background: '#ecfdf5', borderRadius: '10px', border: '1px solid #a7f3d0' } },
+            createElement('strong', { style: { display: 'block', marginBottom: '8px', color: '#065f46', fontSize: '14px' } }, 'Choose from 3 AI Providers:'),
+            createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#1f2937' } },
+                createElement('div', null, '\u2022 ', createElement('strong', null, 'OpenAI'), ' \u2014 GPT-4o-mini. Most accurate. Requires paid API key from platform.openai.com'),
+                createElement('div', null, '\u2022 ', createElement('strong', null, 'Google Gemini'), ' \u2014 Gemini 1.5 Flash. Free tier available. Get key from aistudio.google.com'),
+                createElement('div', null, '\u2022 ', createElement('strong', null, 'Groq (FREE)'), ' \u2014 Llama 3.1. Completely free. Get key from console.groq.com \u2014 Recommended for beginners!')
+            )
+        ),
         createElement('div', { className: 'ppp-form-group' },
             createElement('label', null, 'AI Provider'),
             createElement('select', { className: 'ppp-select', value: provider, onChange: e => setProvider(e.target.value), style: { width: '100%' } },
