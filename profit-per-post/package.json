@@ -1,0 +1,21 @@
+{
+    "name": "profit-per-post",
+    "version": "1.0.0",
+    "description": "Shows exact revenue each blog post generates",
+    "private": true,
+    "scripts": {
+        "build": "wp-scripts build assets/src/js/app.js --output-path=assets/dist/js",
+        "start": "wp-scripts start assets/src/js/app.js --output-path=assets/dist/js",
+        "lint:js": "wp-scripts lint-js assets/src/",
+        "lint:css": "wp-scripts lint-style assets/src/"
+    },
+    "devDependencies": {
+        "@wordpress/scripts": "^27.0.0"
+    },
+    "dependencies": {
+        "@wordpress/element": "^5.0.0",
+        "@wordpress/api-fetch": "^6.0.0",
+        "@wordpress/i18n": "^4.0.0",
+        "@wordpress/components": "^25.0.0"
+    }
+}
