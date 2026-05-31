@@ -723,7 +723,7 @@ function AIOptimizerPage() {
                 createElement('p', { className: 'ppp-page-subtitle' }, 'Get AI-powered suggestions to improve your low-earning posts')
             )
         ),
-        createElement('div', { className: 'ppp-card', style: { marginBottom: '24px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#fff', border: 'none' } },
+        createElement('div', { className: 'ppp-card', style: { marginBottom: '24px', background: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%)', color: '#fff', border: 'none' } },
             createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '16px' } },
                 createElement('span', { className: 'dashicons dashicons-lightbulb', style: { fontSize: '32px' } }),
                 createElement('div', null,
